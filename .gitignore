@@ -1,1 +1,8 @@
-rating.csv
+*.csv
+*.zip
+*.log
+__pycache__/
+*.pyc
+
+
+
