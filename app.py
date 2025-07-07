@@ -1,18 +1,26 @@
 from flask import Flask, render_template, request
-from model import recommend  
+import requests
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET", "POST"])
+OMDB_API_KEY = "ae9b968"  # Replace with your real OMDb API key
+
+def get_movie_poster(movie_title):
+    url = f"http://www.omdbapi.com/?t={movie_title}&apikey={OMDB_API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+    if data.get("Poster") and data["Poster"] != "N/A":
+        return data["Poster"]
+    return None
+
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    recommendations = []
-    movie_title = ""
+    poster = None
+    movie = None
+    if request.method == 'POST':
+        movie = request.form['movie']
+        poster = get_movie_poster(movie)
+    return render_template('index.html', movie=movie, poster=poster)
 
-    if request.method == "POST":
-        movie_title = request.form["movie"]  
-        recommendations = recommend(movie_title)
-
-    return render_template("index.html", recommendations=recommendations, movie_title=movie_title)
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
