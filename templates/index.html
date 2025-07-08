@@ -1,20 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Movie Poster</title>
+  <title>Movie Recommender</title>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    .movie { display: inline-block; margin: 15px; }
+    img { width: 200px; height: 300px; object-fit: cover; }
+  </style>
 </head>
 <body>
-    <h2>Enter a Movie Name</h2>
-    <form method="POST">
-        <input type="text" name="movie" required>
-        <button type="submit">Get Poster</button>
-    </form>
+  <h1>🎬 Movie Recommender</h1>
+  <form method="post">
+    <input type="text" name="movie" placeholder="Enter a movie name" required>
+    <button type="submit">Recommend</button>
+  </form>
 
-    {% if poster %}
-        <h3>Poster for "{{ movie }}":</h3>
-        <img src="{{ poster }}" alt="Poster for {{ movie }}" width="250">
-    {% elif movie %}
-        <p>No poster found for "{{ movie }}"</p>
-    {% endif %}
+  {% if results %}
+    <h2>Recommended for "{{ query }}"</h2>
+    {% for title, poster in results %}
+      <div class="movie">
+        <p>{{ title }}</p>
+        <img src="{{ poster }}" alt="{{ title }}">
+      </div>
+    {% endfor %}
+  {% endif %}
 </body>
 </html>
