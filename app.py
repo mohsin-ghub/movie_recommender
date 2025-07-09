@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import requests
 
 app = Flask(__name__)
@@ -13,7 +13,11 @@ def get_movie_poster(movie_title):
         return data["Poster"]
     return None
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/index', methods=['GET', 'POST'])
 def home():
     poster = None
     movie = None
