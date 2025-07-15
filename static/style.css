@@ -1,14 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
+    font-family: 'Inter', Arial, sans-serif;
+    background: linear-gradient(135deg, #141414 0%, #282828 100%);
+    color: #e7e8ec;
 }
+
 body {
     width: 100vw;
     height: 100vh;
     position: relative;
 }
+
 #particles-js {
     position: fixed;
     width: 100vw;
@@ -17,25 +24,199 @@ body {
     left: 0;
     z-index: 1;
 }
+
+/* --- Index Page Styles --- */
 .center-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
+    min-width: 320px;
+    max-width: 90vw;
+    margin: 0 auto;
+    text-align: center;
+    z-index: 2;
+    padding-top: 7vh;
+}
+
+/* Remove golden color from h1 and use neutral color */
+h1 {
+    font-size: 2.5rem;
+    letter-spacing: 1px;
+    margin-bottom: 32px;
+    color: #e7e8ec;
+    text-shadow: none;
+}
+
+.movie-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+}
+.movie-form input[type="text"] {
+    padding: 14px 22px;
+    font-size: 1.15rem;
+    border: 2px solid #232323;
+    border-radius: 7px;
+    width: 320px;
+    background: #181818;
+    color: #e7e8ec;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.movie-form input[type="text"]:focus {
+    border: 2px solid #f4d47c;
+    box-shadow: 0 0 0 2px #f4d47c33;
+}
+.movie-form button {
+    padding: 13px 32px;
+    font-size: 1.15rem;
+    border: none;
+    border-radius: 7px;
+    background: linear-gradient(90deg, #232323 0%, #282828 100%);
+    color: #e7e8ec;
+    font-family: 'Inter', Arial, sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.18s, color 0.18s, transform 0.14s;
+    position: relative;
+}
+.movie-form button:hover, .movie-form button:focus {
+    background: #3c3c3c;
+    color: #f4d47c;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: none;
+}
+.poster-card {
+    display: inline-block;
+    background: rgba(30,30,30,0.98);
+    border-radius: 18px;
+    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
+    padding: 32px 32px 24px 32px;
+    margin-top: 36px;
+    animation: fadeInScale 0.7s cubic-bezier(.4,1.4,.6,1) both;
+}
+.poster-card img {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    max-width: 260px;
+    margin-bottom: 18px;
+    animation: posterPop 0.8s cubic-bezier(.4,1.4,.6,1) both;
+}
+.poster-card h3 {
+    color: #e7e8ec;
+    margin: 0 0 8px 0;
+    font-size: 1.18rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.recommend-list {
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+    max-width: 340px;
+    animation: fadeInUp 0.7s 0.2s cubic-bezier(.4,1.4,.6,1) both;
+}
+.recommend-list li {
+    background: #232323;
+    color: #e7e8ec;
+    margin: 8px 0;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: background 0.18s, color 0.18s, transform 0.14s;
+}
+.recommend-list li:hover {
+    background: #f4d47c;
+    color: #232323;
+    transform: scale(1.03);
+}
+@media (max-width: 500px) {
+    .movie-form input[type="text"] {
+        width: 90vw;
+        min-width: 0;
+    }
+    .poster-card {
+        padding: 18px 6vw 16px 6vw;
+    }
+}
+@keyframes fadeInScale {
+    0% { opacity: 0; transform: scale(0.85) translateY(30px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes posterPop {
+    0% { opacity: 0; transform: scale(0.7) rotate(-8deg); }
+    80% { opacity: 1; transform: scale(1.05) rotate(2deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+/* --- End Index Page Styles --- */
+
+/* --- Landing Page Styles --- */
+/* Center .center-content vertically and horizontally on landing page */
+body.landing-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.landing-page .center-content {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    padding-top: 0;
+    min-width: 320px;
+    max-width: 90vw;
+    margin: 0 auto;
     text-align: center;
     z-index: 2;
 }
-.btn {
-    padding: 12px 32px;
-    margin: 10px;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #222;
-    color: #fff;
-    transition: background 0.2s;
+.landing-page h1, .landing-page .description {
+    color: #e7e8ec;
+    text-shadow: none;
 }
-.btn:hover {
-    background: #444;
-} 
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn.animated-btn {
+    padding: 8px 22px;
+    margin: 0 2px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: #282828;
+    color: #bebebe;
+    font-family: 'Inter', Arial, sans-serif;
+    font-weight: 600;
+    box-shadow: none;
+    transition: background 0.18s, color 0.18s, transform 0.14s;
+    position: relative;
+    outline: none;
+}
+
+.btn.animated-btn:hover, .btn.animated-btn:focus {
+    background: #3c3c3c;
+    color: #f4d47c;
+    transform: translateY(-2px) scale(1.03);
+}
+
+.btn.animated-btn:active {
+    background: #141414;
+    color: #bebebe;
+    transform: scale(0.98);
+}
+/* --- End Landing Page Styles --- */ 
