@@ -1,20 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Movie Poster</title>
+    <meta charset="UTF-8">
+    <title>Movie Recommender</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Enter a Movie Name</h2>
-    <form method="POST">
-        <input type="text" name="movie" required>
-        <button type="submit">Get Poster</button>
-    </form>
-
-    {% if poster %}
-        <h3>Poster for "{{ movie }}":</h3>
-        <img src="{{ poster }}" alt="Poster for {{ movie }}" width="250">
-    {% elif movie %}
-        <p>No poster found for "{{ movie }}"</p>
-    {% endif %}
+    <div id="particles-js"></div>
+    <div class="center-content">
+        <h1>Movie Recommender</h1>
+        <form class="movie-form" method="POST">
+            <input type="text" name="movie" placeholder="Type a movie name..." required>
+            <button type="submit">Suggest</button>
+        </form>
+        {% if results %}
+            <div class="recommend-list">
+                {% for movie, poster in results %}
+                    <div class="poster-card">
+                        <img src="{{ poster }}" alt="Poster for {{ movie }}">
+                        <h3>{{ movie }}</h3>
+                        {% if poster == 'https://via.placeholder.com/200x300?text=No+Image' %}
+                            <div class="no-poster-label">No poster found</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif query %}
+            <div class="poster-card">
+                <h3>No recommendations found for "{{ query }}"</h3>
+            </div>
+        {% endif %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var posterImg = document.querySelector('.poster-card img');
+        if (posterImg) {
+            // Minimalistic, professional entrance animation
+            anime({
+                targets: posterImg,
+                opacity: [0, 1],
+                scale: [0.96, 1],
+                translateY: [24, 0],
+                duration: 700,
+                easing: 'easeOutCubic'
+            });
+        }
+    });
+    </script>
+    <script src="{{ url_for('static', filename='landing.js') }}"></script>
 </body>
 </html>
