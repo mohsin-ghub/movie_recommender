@@ -14,22 +14,22 @@
             <input type="text" name="movie" placeholder="Type a movie name..." required>
             <button type="submit">Suggest</button>
         </form>
-        {% if poster %}
-        <div class="poster-card">
-            <img src="{{ poster }}" alt="Poster for {{ movie }}">
-            <h3>{{ movie }}</h3>
-            {% if recommendations %}
-            <ul class="recommend-list">
-                {% for rec in recommendations %}
-                <li>{{ rec }}</li>
+        {% if results %}
+            <div class="recommend-list">
+                {% for movie, poster in results %}
+                    <div class="poster-card">
+                        <img src="{{ poster }}" alt="Poster for {{ movie }}">
+                        <h3>{{ movie }}</h3>
+                        {% if poster == 'https://via.placeholder.com/200x300?text=No+Image' %}
+                            <div class="no-poster-label">No poster found</div>
+                        {% endif %}
+                    </div>
                 {% endfor %}
-            </ul>
-            {% endif %}
-        </div>
-        {% elif movie %}
-        <div class="poster-card">
-            <h3>No poster found for "{{ movie }}"</h3>
-        </div>
+            </div>
+        {% elif query %}
+            <div class="poster-card">
+                <h3>No recommendations found for "{{ query }}"</h3>
+            </div>
         {% endif %}
     </div>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>

@@ -89,13 +89,17 @@ h1 {
     box-shadow: none;
 }
 .poster-card {
-    display: inline-block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background: rgba(30,30,30,0.98);
     border-radius: 18px;
     box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
     padding: 32px 32px 24px 32px;
-    margin-top: 36px;
+    margin: 0;
     animation: fadeInScale 0.7s cubic-bezier(.4,1.4,.6,1) both;
+    width: 220px;
+    min-width: 180px;
 }
 .poster-card img {
     border-radius: 12px;
@@ -112,10 +116,14 @@ h1 {
     letter-spacing: 0.5px;
 }
 .recommend-list {
-    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+    margin: 36px auto 0 auto;
     padding: 0;
     list-style: none;
-    max-width: 340px;
+    max-width: 1200px;
     animation: fadeInUp 0.7s 0.2s cubic-bezier(.4,1.4,.6,1) both;
 }
 .recommend-list li {
@@ -132,6 +140,29 @@ h1 {
     background: #f4d47c;
     color: #232323;
     transform: scale(1.03);
+}
+@media (max-width: 900px) {
+    .recommend-list {
+        gap: 18px;
+        max-width: 98vw;
+    }
+    .poster-card {
+        width: 44vw;
+        min-width: 120px;
+        padding: 18px 2vw 16px 2vw;
+    }
+}
+@media (max-width: 600px) {
+    .recommend-list {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .poster-card {
+        width: 90vw;
+        min-width: 0;
+        padding: 12px 2vw 10px 2vw;
+    }
 }
 @media (max-width: 500px) {
     .movie-form input[type="text"] {
@@ -219,4 +250,5 @@ body.landing-page {
     color: #bebebe;
     transform: scale(0.98);
 }
+/* --- End Landing Page Styles --- */ 
 /* --- End Landing Page Styles --- */ 
