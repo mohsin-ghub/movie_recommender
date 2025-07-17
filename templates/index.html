@@ -10,22 +10,19 @@
     <div id="particles-js"></div>
     <div class="center-content">
         <h1>Movie Recommender</h1>
+        {% if error %}
+            <div style="color: red; font-weight: bold; margin-bottom: 1em;">{{ error }}</div>
+        {% endif %}
         <form class="movie-form" method="POST">
             <input type="text" name="movie" placeholder="Type a movie name..." required>
             <button type="submit">Suggest</button>
         </form>
         {% if results %}
-            <div class="recommend-list">
-                {% for movie, poster in results %}
-                    <div class="poster-card">
-                        <img src="{{ poster }}" alt="Poster for {{ movie }}">
-                        <h3>{{ movie }}</h3>
-                        {% if poster == 'https://via.placeholder.com/200x300?text=No+Image' %}
-                            <div class="no-poster-label">No poster found</div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
+            <ul>
+            {% for movie, poster in results %}
+                <li>{{ movie }} - <img src="{{ poster }}" width="50"></li>
+            {% endfor %}
+            </ul>
         {% elif query %}
             <div class="poster-card">
                 <h3>No recommendations found for "{{ query }}"</h3>
