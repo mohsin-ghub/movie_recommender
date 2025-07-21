@@ -17,12 +17,30 @@
             <input type="text" name="movie" placeholder="Type a movie name..." required>
             <button type="submit">Suggest</button>
         </form>
+        {% if generic_texts %}
+            <div class="generic-messages">
+            {% for msg in generic_texts %}
+                <div class="generic-message">{{ msg }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
         {% if results %}
-            <ul>
-            {% for movie, poster in results %}
-                <li>{{ movie }} - <img src="{{ poster }}" width="50"></li>
+            <ul class="recommend-list">
+            {% for title, desc, poster in results %}
+                <li class="poster-card">
+                    <div class="poster-img-wrap">
+                        <img src="{{ poster }}" alt="Poster for {{ title }}" class="movie-poster">
+                    </div>
+                    <div class="movie-title">{{ title }}</div>
+                    {% if desc %}
+                    <div class="movie-desc-below">{{ desc }}</div>
+                    {% endif %}
+                </li>
             {% endfor %}
             </ul>
+            <div class="aspect-recommend-text">
+                Would you like recommendations based on a specific aspect of Superman (e.g., classic heroism, action, or origin stories)?
+            </div>
         {% elif query %}
             <div class="poster-card">
                 <h3>No recommendations found for "{{ query }}"</h3>

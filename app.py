@@ -140,28 +140,37 @@ def home():
     query = ""
     results = []
     error = None
+    generic_texts = []
     if request.method == "POST":
         query = request.form.get("movie")
         if query:
-            movie_titles = get_ai_recommendations(query)
-            title_years = [extract_title_and_year(line) for line in movie_titles]
-            for orig, (title, year) in zip(movie_titles, title_years):
-                print(f"AI output: '{orig}' | Extracted title: '{title}' | Year: '{year}'")
+            movie_strings = get_ai_recommendations(query)
+            title_years = [extract_title_and_year(line) for line in movie_strings]
             posters = []
             failed_count = 0
             for title, year in title_years:
-                print(f"Fetching poster for: '{title}' ({year})")
                 poster = get_movie_poster(title, year)
-                print(f"Poster URL: {poster}")
                 if poster.endswith("No+Image"):
                     failed_count += 1
                 posters.append(poster)
-            results = list(zip(movie_titles, posters))
-            print("Final results (movie, poster):", results)
+            def split_title_desc(s):
+                parts = re.split(r"\s*[–\-:]\s+", s, maxsplit=1)
+                if len(parts) == 2:
+                    return parts[0].strip(), parts[1].strip()
+                return s.strip(), ""
+            results = []
+            for movie_str, poster in zip(movie_strings, posters):
+                title, desc = split_title_desc(movie_str)
+                # Remove asterisks/stars from title
+                title = title.replace('*', '').strip()
+                # Heuristic: consider as generic text if no description, or if the string is long and not a movie title
+                if (not desc and (len(title) > 60 or 'movie' in title.lower() or 'recommend' in title.lower() or 'like' in title.lower())) or (poster.endswith('No+Image') and not desc):
+                    generic_texts.append(title)
+                else:
+                    results.append((title, desc, poster))
             if failed_count == len(title_years):
                 error = "No posters found for any recommended movies. Check OMDB API key or title format."
-    print("Results being passed to template:", results)
-    return render_template("index.html", query=query, results=results, error=error)
+    return render_template("index.html", query=query, results=results, error=error, generic_texts=generic_texts)
 
 if __name__ == "__main__":
     app.run(debug=True)

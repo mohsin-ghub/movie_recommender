@@ -4,9 +4,8 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     font-family: 'Inter', Arial, sans-serif;
-    background: linear-gradient(135deg, #141414 0%, #282828 100%);
+    background: #181818;
     color: #e7e8ec;
 }
 
@@ -82,11 +81,12 @@ h1 {
     transition: background 0.18s, color 0.18s, transform 0.14s;
     position: relative;
 }
+/* Remove yellow hover from .movie-form button */
 .movie-form button:hover, .movie-form button:focus {
-    background: #3c3c3c;
-    color: #f4d47c;
+    background: #353535;
+    color: #e7e8ec;
     transform: translateY(-2px) scale(1.03);
-    box-shadow: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
 }
 .poster-card {
     display: flex;
@@ -119,8 +119,8 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 32px;
-    margin: 36px auto 0 auto;
+    gap: 36px;
+    margin: 40px auto 0 auto;
     padding: 0;
     list-style: none;
     max-width: 1200px;
@@ -136,10 +136,12 @@ h1 {
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: background 0.18s, color 0.18s, transform 0.14s;
 }
+/* Remove yellow hover from .recommend-list li */
 .recommend-list li:hover {
-    background: #f4d47c;
-    color: #232323;
+    background: #353535;
+    color: #e7e8ec;
     transform: scale(1.03);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
 }
 @media (max-width: 900px) {
     .recommend-list {
@@ -252,3 +254,241 @@ body.landing-page {
 }
 /* --- End Landing Page Styles --- */ 
 /* --- End Landing Page Styles --- */ 
+
+/* --- Enhanced Recommendation List Styles --- */
+.recommend-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    margin: 40px auto 0 auto;
+    padding: 0;
+    list-style: none;
+    max-width: 1200px;
+    animation: fadeInUp 0.7s 0.2s cubic-bezier(.4,1.4,.6,1) both;
+}
+.recommend-list .poster-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(30,30,30,0.98);
+    border-radius: 18px;
+    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
+    padding: 24px 18px 22px 18px;
+    margin: 0;
+    width: 240px;
+    min-width: 180px;
+    transition: box-shadow 0.32s cubic-bezier(.4,1.4,.6,1), transform 0.32s cubic-bezier(.4,1.4,.6,1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+.recommend-list .poster-card:hover {
+    box-shadow: 0 16px 48px 0 rgba(0,0,0,0.36);
+    transform: scale(1.06) translateY(-8px);
+    z-index: 3;
+}
+/* --- Larger Poster and Below-Poster Description --- */
+.poster-img-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 200px;
+    height: 300px;
+    margin: 0 auto 16px auto;
+    transition: none;
+}
+.movie-poster {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #181818;
+    transition: transform 0.32s cubic-bezier(.4,1.4,.6,1), box-shadow 0.32s;
+}
+.recommend-list .poster-card:hover .movie-poster {
+    transform: scale(1.04);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.movie-desc {
+    color: #e7e8ec;
+    font-size: 1.08rem;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 2px;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    word-break: break-word;
+    max-width: 200px;
+    opacity: 0.88;
+    transform: translateY(10px);
+    transition: opacity 0.32s cubic-bezier(.4,1.4,.6,1), transform 0.32s cubic-bezier(.4,1.4,.6,1), letter-spacing 0.32s;
+}
+.poster-card:hover .movie-desc {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+/* --- Poster Card Overlay Hover Effect --- */
+.poster-img-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.movie-desc-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(24,24,24,0.92);
+    color: #e7e8ec;
+    font-size: 1.08rem;
+    font-weight: 500;
+    padding: 22px 16px 18px 16px;
+    border-radius: 0 0 14px 14px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(24px);
+    transition: opacity 0.32s cubic-bezier(.4,1.4,.6,1), transform 0.32s cubic-bezier(.4,1.4,.6,1);
+    text-align: center;
+    z-index: 3;
+}
+.poster-img-wrap:hover .movie-desc-overlay,
+.poster-card:hover .movie-desc-overlay {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.movie-title {
+    color: #e7e8ec;
+    font-size: 1.13rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 8px;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+    word-break: break-word;
+    max-width: 200px;
+    transition: color 0.22s;
+}
+.movie-desc-below {
+    color: #bfc0c5;
+    font-size: 1.01rem;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 auto;
+    margin-top: 0;
+    margin-bottom: 0;
+    max-width: 200px;
+    max-height: 0;
+    line-height: 1.5;
+    opacity: 0;
+    pointer-events: none;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    transform: translateY(12px);
+    overflow: hidden;
+    transition: opacity 0.32s cubic-bezier(.4,1.4,.6,1), transform 0.32s cubic-bezier(.4,1.4,.6,1), max-height 0.32s cubic-bezier(.4,1.4,.6,1), margin-top 0.32s cubic-bezier(.4,1.4,.6,1), padding 0.32s cubic-bezier(.4,1.4,.6,1);
+}
+.recommend-list .poster-card:hover .movie-desc-below {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    margin-top: 16px;
+    margin-bottom: 4px;
+    padding: 0 4px;
+    max-height: 200px;
+}
+@media (max-width: 900px) {
+    .recommend-list {
+        gap: 18px;
+        max-width: 98vw;
+    }
+    .recommend-list .poster-card {
+        width: 44vw;
+        min-width: 120px;
+        padding: 18px 2vw 16px 2vw;
+    }
+    .movie-poster {
+        width: 120px;
+        height: 180px;
+    }
+    .poster-img-wrap {
+        width: 140px;
+        height: 210px;
+    }
+    .movie-title, .movie-desc-below {
+        max-width: 140px;
+    }
+}
+@media (max-width: 600px) {
+    .recommend-list {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .recommend-list .poster-card {
+        width: 90vw;
+        min-width: 0;
+        padding: 12px 2vw 10px 2vw;
+    }
+    .movie-poster {
+        width: 90vw;
+        max-width: 220px;
+        height: auto;
+    }
+    .poster-img-wrap {
+        width: 90vw;
+        max-width: 220px;
+        height: auto;
+        aspect-ratio: 2/3;
+    }
+    .movie-title, .movie-desc-below {
+        max-width: 90vw;
+    }
+} 
+
+.generic-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 24px auto 12px auto;
+    max-width: 700px;
+}
+.generic-message {
+    background: rgba(30,30,30,0.98);
+    color: #e7e8ec;
+    font-size: 1.08rem;
+    font-weight: 500;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    text-align: center;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    word-break: break-word;
+} 
+
+.aspect-recommend-text {
+    margin: 36px auto 0 auto;
+    text-align: center;
+    color: #e7e8ec;
+    background: rgba(30,30,30,0.96);
+    border-radius: 10px;
+    padding: 18px 24px;
+    font-size: 1.13rem;
+    font-weight: 500;
+    max-width: 600px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    opacity: 0.96;
+} 
