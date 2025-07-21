@@ -135,6 +135,10 @@ def extract_title_and_year(line):
 def landing():
     return render_template("landing.html")
 
+@app.route("/login-signup", methods=["GET"])
+def login_signup():
+    return render_template("login_signup.html")
+
 @app.route("/recommender", methods=["GET", "POST"])
 def home():
     query = ""
