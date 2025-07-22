@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Login / Signup - Movie Recommender</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         body {
             background: #181818;
@@ -118,47 +118,72 @@
 </head>
 <body>
     <div id="particles-js" class="auth-bg"></div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashed-messages">
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     <div class="auth-center">
-        <div class="auth-container" id="login-container">
+        <div class="auth-container" id="login-container" {% if not show_signup %}style="display: flex;"{% else %}style="display: none;"{% endif %}>
             <div class="auth-title">Login</div>
-            <form class="auth-form">
-                <input type="email" placeholder="Email" required>
-                <input type="password" placeholder="Password" required>
+            <form class="auth-form" method="POST" action="{{ url_for('login') }}" aria-label="Login form">
+                {{ form.hidden_tag() if form and not show_signup }}
+                {{ form.email.label if form and not show_signup }}
+                {{ form.email(size=32, placeholder="Email", required=true, aria_label='Email') if form and not show_signup }}
+                {{ form.password.label if form and not show_signup }}
+                <div class="password-field-wrap" style="position:relative;width:100%;margin-bottom:0;">
+                    {{ form.password(size=32, placeholder="Password", required=true, aria_label='Password', id='login-password', autocomplete='current-password') if form and not show_signup }}
+                    <button type="button" class="show-password-btn" aria-label="Show/hide password" tabindex="0" onclick="togglePassword('login-password', this)" style="position:absolute;right:10px;top:0;bottom:0;height:100%;display:flex;align-items:center;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#bfc0c5;padding:0 4px;z-index:2;">
+                        <svg id="eye-icon-login" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
                 <button type="submit" class="btn animated-btn">Login</button>
-                <button type="button" class="auth-link-btn" style="margin-top: 2px; margin-bottom: 0;">Forgot password?</button>
+                <button type="button" class="auth-link-btn" id="forgot-password-btn" style="margin-top: 2px; margin-bottom: 0;">Forgot password?</button>
             </form>
             <div class="auth-switch">
                 Don't have an account?
-                <button class="auth-link-btn" id="show-signup">Signup</button>
+                <a class="auth-link-btn" href="{{ url_for('signup') }}">Signup</a>
             </div>
         </div>
-        <div class="auth-container" id="signup-container" style="display: none;">
+        <div class="auth-container" id="signup-container" {% if show_signup %}style="display: flex;"{% else %}style="display: none;"{% endif %}>
             <div class="auth-title">Signup</div>
-            <form class="auth-form">
-                <input type="text" placeholder="Name" required>
-                <input type="email" placeholder="Email" required>
-                <input type="password" placeholder="Password" required>
-                <input type="password" placeholder="Confirm Password" required>
+            <form class="auth-form" method="POST" action="{{ url_for('signup') }}" aria-label="Signup form">
+                {{ form.hidden_tag() if form and show_signup }}
+                {{ form.email.label if form and show_signup }}
+                {{ form.email(size=32, placeholder="Email", required=true, aria_label='Email') if form and show_signup }}
+                {{ form.password.label if form and show_signup }}
+                <div class="password-field-wrap" style="position:relative;width:100%;margin-bottom:0;">
+                    {{ form.password(size=32, placeholder="Password", required=true, aria_label='Password', id='signup-password', autocomplete='new-password') if form and show_signup }}
+                    <button type="button" class="show-password-btn" aria-label="Show/hide password" tabindex="0" onclick="togglePassword('signup-password', this)" style="position:absolute;right:10px;top:0;bottom:0;height:100%;display:flex;align-items:center;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#bfc0c5;padding:0 4px;z-index:2;">
+                        <svg id="eye-icon-signup" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+                <div class="password-strength" id="password-strength"></div>
+                {{ form.confirm_password.label if form and show_signup }}
+                {{ form.confirm_password(size=32, placeholder="Confirm Password", required=true, aria_label='Confirm Password', id='signup-confirm-password', autocomplete='new-password') if form and show_signup }}
                 <button type="submit" class="btn animated-btn">Signup</button>
             </form>
             <div class="auth-switch">
                 Already have an account?
-                <button class="auth-link-btn" id="show-login">Login</button>
+                <a class="auth-link-btn" href="{{ url_for('login_signup') }}">Login</a>
             </div>
+        </div>
+        <!-- Forgot Password Modal -->
+        <div id="forgot-password-modal" class="auth-container" style="display:none; position: absolute; top: 10vh; left: 50%; transform: translateX(-50%); z-index: 100;">
+            <div class="auth-title">Forgot Password</div>
+            <form class="auth-form" method="POST" action="#" aria-label="Forgot password form">
+                <input type="email" placeholder="Enter your email" required name="forgot_email" id="forgot-email">
+                <button type="submit" class="btn animated-btn">Send Reset Link</button>
+                <button type="button" class="auth-link-btn" id="close-forgot-modal">Cancel</button>
+            </form>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-    <script>
-        // Toggle between login and signup containers
-        document.getElementById('show-signup').onclick = function() {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('signup-container').style.display = 'flex';
-        };
-        document.getElementById('show-login').onclick = function() {
-            document.getElementById('signup-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-        };
-    </script>
-    <script src="{{ url_for('static', filename='landing.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </body>
 </html> 

@@ -3,19 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>Movie Recommender</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Get AI-powered movie recommendations instantly. Discover your next favorite film!">
+    <meta property="og:title" content="Movie Recommender">
+    <meta property="og:description" content="Get AI-powered movie recommendations instantly. Discover your next favorite film!">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="/static/img/og-image.png">
+    <link rel="icon" type="image/png" href="/static/img/favicon.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <button class="theme-toggle" aria-label="Toggle dark/light mode" tabindex="0" onclick="toggleTheme()">🌓</button>
     <div id="particles-js"></div>
     <div class="center-content">
         <h1>Movie Recommender</h1>
-        {% if error %}
-            <div style="color: red; font-weight: bold; margin-bottom: 1em;">{{ error }}</div>
-        {% endif %}
-        <form class="movie-form" method="POST">
-            <input type="text" name="movie" placeholder="Type a movie name..." required>
-            <button type="submit">Suggest</button>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashed-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        <form class="movie-form" method="POST" aria-label="Movie recommender form">
+            {{ form.hidden_tag() }}
+            {{ form.movie(size=32, placeholder="Type a movie name...", required=true, aria_label='Movie name') }}
+            <button type="submit" aria-label="Get movie suggestions">Suggest</button>
         </form>
         {% if generic_texts %}
             <div class="generic-messages">
@@ -49,22 +65,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var posterImg = document.querySelector('.poster-card img');
-        if (posterImg) {
-            // Minimalistic, professional entrance animation
-            anime({
-                targets: posterImg,
-                opacity: [0, 1],
-                scale: [0.96, 1],
-                translateY: [24, 0],
-                duration: 700,
-                easing: 'easeOutCubic'
-            });
-        }
-    });
-    </script>
-    <script src="{{ url_for('static', filename='landing.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </body>
 </html>

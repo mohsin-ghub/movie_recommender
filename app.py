@@ -1,180 +1,163 @@
 import os
-import requests
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, flash, redirect, url_for, session
 from dotenv import load_dotenv
+from flask_wtf import FlaskForm, CSRFProtect
+from wtforms import StringField, PasswordField
+from wtforms.validators import DataRequired, Length, Email, EqualTo
+from flask_caching import Cache
+from markupsafe import escape
+from utils import get_env_key, get_movie_poster, get_ai_recommendations, extract_title_and_year
+from typing import Optional
 import re
+from flask_sqlalchemy import SQLAlchemy
+import bcrypt
 
 load_dotenv()
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'dev_secret_key')  # Required for CSRF and flash
+csrf = CSRFProtect(app)
 
-def get_env_key(key_name):
-    value = os.getenv(key_name)
-    if not value:
-        print(f"[ERROR] Environment variable '{key_name}' is missing or empty.")
-    return value
+# Configure Flask-Caching
+cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
+
+# Configure SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
 
 OPENROUTER_API_KEY = get_env_key("OPENROUTER_API_KEY")
 OMDB_API_KEY = get_env_key("OMDB_API_KEY")
 
-# Debug print for keys (do not print actual key for security)
-print("OPENROUTER_API_KEY loaded:", bool(OPENROUTER_API_KEY))
-print("OMDB_API_KEY loaded:", bool(OMDB_API_KEY))
+class MovieForm(FlaskForm):
+    movie = StringField('Movie', validators=[DataRequired(), Length(max=100)])
 
-def get_movie_poster(movie_title, year=None):
-    if not OMDB_API_KEY or not movie_title:
-        print(f"[DEBUG] OMDB_API_KEY present: {bool(OMDB_API_KEY)}; movie_title: '{movie_title}'")
-        return "https://via.placeholder.com/200x300?text=No+Image"
-    url = f"http://www.omdbapi.com/?t={movie_title}"
-    if year:
-        url += f"&y={year}"
-    url += f"&apikey={OMDB_API_KEY}"
-    masked_key = OMDB_API_KEY[:4] + "..." + OMDB_API_KEY[-4:] if len(OMDB_API_KEY) > 8 else OMDB_API_KEY
-    print(f"[DEBUG] Requesting OMDB URL: {url.replace(OMDB_API_KEY, masked_key)}")
-    try:
-        response = requests.get(url, timeout=5)
-        print(f"[DEBUG] OMDB status code: {response.status_code}")
-        if response.status_code != 200:
-            print(f"[ERROR] OMDB API returned status code {response.status_code} for title '{movie_title}'")
-            return "https://via.placeholder.com/200x300?text=No+Image"
-        try:
-            data = response.json()
-        except Exception as e:
-            print(f"[ERROR] Could not decode JSON for '{movie_title}': {e}")
-            print(f"[DEBUG] Raw response text: {response.text}")
-            return "https://via.placeholder.com/200x300?text=No+Image"
-        if data.get("Response") == "True" and data.get("Poster") and data["Poster"] != "N/A":
-            return data["Poster"]
-        else:
-            print(f"[INFO] No poster found for '{movie_title}'. OMDB response: {data}")
-            return "https://via.placeholder.com/200x300?text=No+Image"
-    except Exception as e:
-        print(f"[ERROR] Exception fetching poster for '{movie_title}': {e}")
-        return "https://via.placeholder.com/200x300?text=No+Image"
+class SignupForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=64)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
 
-def get_ai_recommendations(movie_title):
-    if not OPENROUTER_API_KEY:
-        print("[ERROR] OPENROUTER_API_KEY is missing. Cannot get recommendations.")
-        return ["API key missing. Please set OPENROUTER_API_KEY in your .env file."]
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "deepseek/deepseek-chat-v3-0324:free",
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a helpful movie recommendation assistant. Given a movie title, suggest 5 similar movies with a short reason for each."
-            },
-            {
-                "role": "user",
-                "content": f"Recommend 5 movies similar to {movie_title}."
-            }
-        ]
-    }
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        data = response.json()
-        print("🧠 deepseek Response:", data)
-        if "choices" not in data:
-            error_msg = data.get("error", {}).get("message", "Unknown error from API.")
-            print(f"[ERROR] API response error: {error_msg}")
-            return [f"API error: {error_msg}"]
-        content = data["choices"][0]["message"]["content"]
-        lines = content.strip().split("\n")
-        movies = [line.split(". ", 1)[-1].strip() for line in lines if line]
-        return movies
-    except Exception as e:
-        print("❌ deepseek API Error:", e)
-        return [f"API Exception: {e}"]
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired()])
 
-# Improved extract_title to handle more edge cases
+def is_strong_password(password: str) -> bool:
+    # At least 8 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
+    import re
+    return (
+        len(password) >= 8 and
+        re.search(r'[A-Z]', password) and
+        re.search(r'[a-z]', password) and
+        re.search(r'\d', password) and
+        re.search(r'[^A-Za-z0-9]', password)
+    )
 
-def extract_title(line):
-    # Try to extract from **Title (Year)** or **Title**
-    match = re.match(r"\*\*(.*?)\*\*", line)
-    if match:
-        title = match.group(1).split("&")[0].split(",")[0].strip()
-        if title and title.lower() not in ['n/a', '[insert title here]']:
-            return title
-    # Try to extract up to the first dash, parenthesis, ampersand, or comma
-    part = line.split('–')[0].split('-')[0].split('(')[0].split('&')[0].split(',')[0].strip()
-    if part and part.lower() not in ['n/a', '[insert title here]']:
-        return part
-    # Try to extract a capitalized phrase at the start
-    match = re.match(r"([A-Z][A-Za-z0-9:,'!\\- ]+)", line)
-    if match:
-        title = match.group(1).strip()
-        if title and title.lower() not in ['n/a', '[insert title here]']:
-            return title
-    # Fallback: return empty string
-    return ""
-
-# Extract both title and year for OMDB
-
-def extract_title_and_year(line):
-    # Try to extract from **Title (Year)**
-    match = re.match(r"\*\*(.*?)\s*\((\d{4})\)\*\*", line)
-    if match:
-        return match.group(1).strip(), match.group(2)
-    # Try to extract from **Title**
-    match = re.match(r"\*\*(.*?)\*\*", line)
-    if match:
-        return match.group(1).strip(), None
-    # Fallback: extract title and year from e.g. 'Sing (2016)'
-    match = re.match(r"(.*?)(?:\s*\((\d{4})\))?$", line)
-    if match:
-        title = match.group(1).strip()
-        year = match.group(2)
-        if title and title.lower() not in ['n/a', '[insert title here]']:
-            return title, year
-    return "", None
+def get_cached_movie_poster(title: str, year: Optional[str]) -> str:
+    """
+    Get movie poster URL with caching.
+    """
+    cache_key = f"poster:{title}:{year}"
+    poster = cache.get(cache_key)
+    if poster is None:
+        poster = get_movie_poster(title, year, OMDB_API_KEY)
+        cache.set(cache_key, poster, timeout=60*60*24)  # Cache for 24 hours
+    return poster
 
 @app.route("/", methods=["GET"])
 def landing():
+    """Landing page route."""
     return render_template("landing.html")
 
-@app.route("/login-signup", methods=["GET"])
+@app.route('/login-signup', methods=['GET'])
 def login_signup():
-    return render_template("login_signup.html")
+    # Default to login form
+    form = LoginForm()
+    return render_template('login_signup.html', form=form, show_signup=False)
 
 @app.route("/recommender", methods=["GET", "POST"])
 def home():
+    """Main recommender route."""
+    form = MovieForm()
     query = ""
     results = []
     error = None
     generic_texts = []
-    if request.method == "POST":
-        query = request.form.get("movie")
+    if form.validate_on_submit():
+        query = escape(form.movie.data.strip())
         if query:
-            movie_strings = get_ai_recommendations(query)
+            movie_strings = get_ai_recommendations(query, OPENROUTER_API_KEY)
             title_years = [extract_title_and_year(line) for line in movie_strings]
             posters = []
             failed_count = 0
             for title, year in title_years:
-                poster = get_movie_poster(title, year)
+                poster = get_cached_movie_poster(title, year)
                 if poster.endswith("No+Image"):
                     failed_count += 1
                 posters.append(poster)
             def split_title_desc(s):
-                parts = re.split(r"\s*[–\-:]\s+", s, maxsplit=1)
+                parts = re.split(r"\s*[\u2013\-:]\s+", s, maxsplit=1)
                 if len(parts) == 2:
                     return parts[0].strip(), parts[1].strip()
                 return s.strip(), ""
             results = []
             for movie_str, poster in zip(movie_strings, posters):
                 title, desc = split_title_desc(movie_str)
-                # Remove asterisks/stars from title
                 title = title.replace('*', '').strip()
-                # Heuristic: consider as generic text if no description, or if the string is long and not a movie title
                 if (not desc and (len(title) > 60 or 'movie' in title.lower() or 'recommend' in title.lower() or 'like' in title.lower())) or (poster.endswith('No+Image') and not desc):
                     generic_texts.append(title)
                 else:
                     results.append((title, desc, poster))
             if failed_count == len(title_years):
-                error = "No posters found for any recommended movies. Check OMDB API key or title format."
-    return render_template("index.html", query=query, results=results, error=error, generic_texts=generic_texts)
+                flash("No posters found for any recommended movies. Check OMDB API key or title format.", "error")
+    elif request.method == "POST":
+        flash("Invalid input. Please enter a valid movie name.", "error")
+    return render_template("index.html", query=query, results=results, error=error, generic_texts=generic_texts, form=form)
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    form = SignupForm()
+    if form.validate_on_submit():
+        email = form.email.data.lower().strip()
+        password = form.password.data
+        if not is_strong_password(password):
+            flash('Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.', 'error')
+            return render_template('login_signup.html', form=form, show_signup=True)
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered.', 'error')
+            return render_template('login_signup.html', form=form, show_signup=True)
+        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        user = User(email=email, password_hash=pw_hash.decode('utf-8'))
+        db.session.add(user)
+        db.session.commit()
+        flash('Signup successful! Please log in.', 'success')
+        return redirect(url_for('login_signup'))
+    return render_template('login_signup.html', form=form, show_signup=True)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data.lower().strip()
+        password = form.password.data
+        user = User.query.filter_by(email=email).first()
+        if user and bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+            session['user_id'] = user.id
+            session['user_email'] = user.email
+            flash('Logged in successfully!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid email or password.', 'error')
+    return render_template('login_signup.html', form=form, show_signup=False)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out.', 'success')
+    return redirect(url_for('login_signup'))
 
 if __name__ == "__main__":
     app.run(debug=True)

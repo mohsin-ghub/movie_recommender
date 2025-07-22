@@ -1,9 +1,20 @@
-
-*.zip
-*.log
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+
+# Flask instance folder and local DBs
+instance/
+*.db
+
+# Environment variables
 .env
+
+# OS/Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
 
 
