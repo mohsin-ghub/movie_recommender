@@ -1,60 +1,26 @@
 import os
 import requests
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import re
+from utils import get_movie_poster, get_ai_recommendations, extract_title_and_year
 
 load_dotenv()
 app = Flask(__name__)
 
-def get_env_key(key_name):
-    value = os.getenv(key_name)
-    if not value:
-        print(f"[ERROR] Environment variable '{key_name}' is missing or empty.")
-    return value
-
-OPENROUTER_API_KEY = get_env_key("OPENROUTER_API_KEY")
-OMDB_API_KEY = get_env_key("OMDB_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 
 # Debug print for keys (do not print actual key for security)
 print("OPENROUTER_API_KEY loaded:", bool(OPENROUTER_API_KEY))
 print("OMDB_API_KEY loaded:", bool(OMDB_API_KEY))
 
-def get_movie_poster(movie_title, year=None):
-    if not OMDB_API_KEY or not movie_title:
-        print(f"[DEBUG] OMDB_API_KEY present: {bool(OMDB_API_KEY)}; movie_title: '{movie_title}'")
-        return "https://via.placeholder.com/200x300?text=No+Image"
-    url = f"http://www.omdbapi.com/?t={movie_title}"
-    if year:
-        url += f"&y={year}"
-    url += f"&apikey={OMDB_API_KEY}"
-    masked_key = OMDB_API_KEY[:4] + "..." + OMDB_API_KEY[-4:] if len(OMDB_API_KEY) > 8 else OMDB_API_KEY
-    print(f"[DEBUG] Requesting OMDB URL: {url.replace(OMDB_API_KEY, masked_key)}")
-    try:
-        response = requests.get(url, timeout=5)
-        print(f"[DEBUG] OMDB status code: {response.status_code}")
-        if response.status_code != 200:
-            print(f"[ERROR] OMDB API returned status code {response.status_code} for title '{movie_title}'")
-            return "https://via.placeholder.com/200x300?text=No+Image"
-        try:
-            data = response.json()
-        except Exception as e:
-            print(f"[ERROR] Could not decode JSON for '{movie_title}': {e}")
-            print(f"[DEBUG] Raw response text: {response.text}")
-            return "https://via.placeholder.com/200x300?text=No+Image"
-        if data.get("Response") == "True" and data.get("Poster") and data["Poster"] != "N/A":
-            return data["Poster"]
-        else:
-            print(f"[INFO] No poster found for '{movie_title}'. OMDB response: {data}")
-            return "https://via.placeholder.com/200x300?text=No+Image"
-    except Exception as e:
-        print(f"[ERROR] Exception fetching poster for '{movie_title}': {e}")
-        return "https://via.placeholder.com/200x300?text=No+Image"
-
 def get_ai_recommendations(movie_title):
     if not OPENROUTER_API_KEY:
         print("[ERROR] OPENROUTER_API_KEY is missing. Cannot get recommendations.")
-        return ["API key missing. Please set OPENROUTER_API_KEY in your .env file."]
+        return []
+    # Debug print for the API key (masked)
+    print("OPENROUTER_API_KEY (masked):", OPENROUTER_API_KEY[:4] + "..." + OPENROUTER_API_KEY[-4:] if OPENROUTER_API_KEY else "None")
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -80,14 +46,14 @@ def get_ai_recommendations(movie_title):
         if "choices" not in data:
             error_msg = data.get("error", {}).get("message", "Unknown error from API.")
             print(f"[ERROR] API response error: {error_msg}")
-            return [f"API error: {error_msg}"]
+            return []  # Return empty list on error
         content = data["choices"][0]["message"]["content"]
         lines = content.strip().split("\n")
         movies = [line.split(". ", 1)[-1].strip() for line in lines if line]
         return movies
     except Exception as e:
         print("❌ deepseek API Error:", e)
-        return [f"API Exception: {e}"]
+        return []
 
 # Improved extract_title to handle more edge cases
 
@@ -111,8 +77,6 @@ def extract_title(line):
     # Fallback: return empty string
     return ""
 
-# Extract both title and year for OMDB
-
 def extract_title_and_year(line):
     # Try to extract from **Title (Year)**
     match = re.match(r"\*\*(.*?)\s*\((\d{4})\)\*\*", line)
@@ -130,6 +94,51 @@ def extract_title_and_year(line):
         if title and title.lower() not in ['n/a', '[insert title here]']:
             return title, year
     return "", None
+
+def get_movie_details(title, year=None):
+    if not OMDB_API_KEY or not title:
+        return None
+    # Sanitize title: remove asterisks and extra whitespace
+    clean_title = title.replace('*', '').strip()
+    url = f"http://www.omdbapi.com/?t={clean_title}"
+    if year:
+        url += f"&y={year}"
+    url += f"&apikey={OMDB_API_KEY}"
+    print(f"[DEBUG] Requesting OMDB details URL: {url}")
+    try:
+        response = requests.get(url, timeout=5)
+        print(f"[DEBUG] OMDB details status code: {response.status_code}")
+        print(f"[DEBUG] OMDB details raw response: {response.text}")
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        if data.get("Response") == "True":
+            return {
+                "Poster": data.get("Poster", "https://via.placeholder.com/200x300?text=No+Image"),
+                "Title": data.get("Title", clean_title),
+                "Director": data.get("Director", "N/A"),
+                "Cast": data.get("Actors", "N/A"),
+                "Runtime": data.get("Runtime", "N/A"),
+                "Rating": data.get("imdbRating", "N/A"),
+                "Year": data.get("Year", year)
+            }
+        else:
+            print(f"[INFO] OMDB details not found for '{clean_title}'. OMDB response: {data}")
+            return None
+    except Exception as e:
+        print(f"[ERROR] Exception fetching movie details for '{title}': {e}")
+        return None
+
+@app.route("/movie_details", methods=["POST"])
+def movie_details():
+    data = request.get_json()
+    title = data.get("title")
+    year = data.get("year")
+    details = get_movie_details(title, year)
+    if details:
+        return jsonify({"success": True, "details": details})
+    else:
+        return jsonify({"success": False, "error": "Movie details not found."}), 404
 
 @app.route("/", methods=["GET"])
 def landing():
@@ -149,6 +158,9 @@ def home():
         query = request.form.get("movie")
         if query:
             movie_strings = get_ai_recommendations(query)
+            if not movie_strings:
+                error = "Could not get recommendations. Please check your OpenRouter API key."
+                return render_template("index.html", query=query, results=[], error=error, generic_texts=[])
             title_years = [extract_title_and_year(line) for line in movie_strings]
             posters = []
             failed_count = 0
